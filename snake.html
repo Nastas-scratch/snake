@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Змейка</title>
+<link rel="stylesheet" type="text/css" href="style.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #eee;
+        }
+
+        #game-title {
+            font-size: 2em;
+            font-family: 'Impact', cursive, sans-serif;
+            margin-bottom: 20px;
+        }
+
+        #game-board {
+            display: grid;
+            border: 1px solid #000;
+        }
+
+        .tile {
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .snake {
+            border-radius: 50%;
+        }
+
+        .snake-head {
+            background-color: #333;
+        }
+
+        .snake-body {
+            background-color: #555;
+        }
+
+        .food {
+            border-radius: 50%;
+        }
+
+        .food.normal {
+            background-color: red;
+        }
+
+        .food.special {
+            background-color: pink;
+        }
+
+        #controls {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        button {
+            margin: 0 15px;
+            padding: 15px;
+            font-size: 20px;
+        }
+
+        #start-menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1;
+        }
+
+        #start-menu button {
+            margin: 15px;
+            padding: 15px;
+            font-size: 20px;
+        }
+
+        #color-selection {
+            display: flex;
+            margin-top: 20px;
+            z-index: 2;
+        }
+
+        #color-selection label {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-title">chat-GPT snake</div>
+
+    <div id="start-menu">
+        <h1>Snake Game</h1>
+<h2>выбери цвет змейки</h2>
+
+        <div id="color-selection">
+            <label>
+                <input type="radio" name="snake-color" value="black" checked> Black
+            </label>
+            <label>
+                <input type="radio" name="snake-color" value="green"> Green
+            </label>
+            <label>
+                <input type="radio" name="snake-color" value="blue"> Blue
+            </label>
+        </div>
+
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="game-board"></div>
+
+    <div id="controls">
+        <button onclick="changeDirection('up')">↑</button>
+    </div>
+    <div id="controls">
+        <button onclick="changeDirection('left')">←</button>
+        <button onclick="changeDirection('right')">→</button>
+    </div>
+    <div id="controls">
+        <button onclick="changeDirection('down')">↓</button>
+    </div>
+    <div id="controls">
+        <button onclick="togglePause()">Pause/Resume</button>
+    </div>
+
+    <script>
+        const boardSize = 20;
+        const tileSize = 20;
+        let snakeSpeed = 200;
+        let intervalId;
+        let isPaused = false;
+        let isGameOver = false;
+        let foodTimerId;
+        let specialFoodTimerId;
+
+        const gameTitle = document.getElementById('game-title');
+        const gameBoard = document.getElementById('game-board');
+        const startMenu = document.getElementById('start-menu');
+
+        let snake = [{ x: 10, y: 10 }];
+        let direction = 'right';
+        let foods = [];
+        let specialFood = { x: 0, y: 0 };
+        let selectedColor = 'black';
+
+        function createBoard() {
+            gameBoard.style.gridTemplateColumns = `repeat(${boardSize}, ${tileSize}px)`;
+            gameBoard.style.gridTemplateRows = `repeat(${boardSize}, ${tileSize}px)`;
+
+            for (let i = 0; i < boardSize * boardSize; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                gameBoard.appendChild(tile);
+            }
+        }
+
+        function drawSnake() {
+            document.querySelectorAll('.snake').forEach(snakeSegment => snakeSegment.remove());
+
+            snake.forEach((segment, index) => {
+                const snakeSegment = document.createElement('div');
+                snakeSegment.classList.add('snake');
+
+                if (index === 0) {
+                    snakeSegment.classList.add('snake-head');
+                } else {
+                    snakeSegment.classList.add('snake-body');
+                }
+
+                snakeSegment.style.gridColumnStart = segment.x;
+                snakeSegment.style.gridRowStart = segment.y;
+                snakeSegment.style.backgroundColor = selectedColor;
+                gameBoard.appendChild(snakeSegment);
+            });
+        }
+
+        function drawFood() {
+            document.querySelectorAll('.food').forEach(foodTile => foodTile.remove());
+
+            foods.forEach(food => {
+                const foodTile = document.createElement('div');
+                foodTile.classList.add('food');
+
+                if (food.type === 'normal') {
+                    foodTile.classList.add('normal');
+                } else if (food.type === 'special') {
+                    foodTile.classList.add('special');
+                }
+
+                foodTile.style.gridColumnStart = food.x;
+                foodTile.style.gridRowStart = food.y;
+                gameBoard.appendChild(foodTile);
+            });
+        }
+
+        function generateFood() {
+            const food = {
+                x: Math.floor(Math.random() * boardSize) + 1,
+                y: Math.floor(Math.random() * boardSize) + 1,
+                type: 'normal'
+            };
+
+            foods.push(food);
+            drawFood();
+        }
+
+        function generateSpecialFood() {
+            if (!specialFood.x && !specialFood.y) {
+                specialFood = {
+                    x: Math.floor(Math.random() * boardSize) + 1,
+                    y: Math.floor(Math.random() * boardSize) + 1
+                };
+
+                drawFood();
+            }
+        }
+
+        function update() {
+            if (!isPaused && !isGameOver) {
+                moveSnake();
+                checkCollision();
+                drawSnake();
+                checkFoodCollision();
+            }
+        }
+
+        function moveSnake() {
+            const head = { ...snake[0] };
+
+            switch (direction) {
+                case 'up':
+                    head.y--;
+                    break;
+                case 'down':
+                    head.y++;
+                    break;
+                case 'left':
+                    head.x--;
+                    break;
+                case 'right':
+                    head.x++;
+                    break;
+            }
+
+                       snake.unshift(head);
+            snake.pop();
+        }
+
+        function checkCollision() {
+            const head = snake[0];
+
+            if (head.x < 1 || head.x > boardSize || head.y < 1 || head.y > boardSize) {
+                // Змейка столкнулась с границами поля - игра заканчивается.
+                endGame();
+            }
+
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    // Столкновение с самой собой - игра заканчивается.
+                    endGame();
+                }
+            }
+        }
+
+        function checkFoodCollision() {
+            const head = snake[0];
+
+            for (let i = 0; i < foods.length; i++) {
+                if (head.x === foods[i].x && head.y === foods[i].y) {
+                    snake.push({});
+                    foods.splice(i, 1);
+                    drawFood();
+
+                    if (foods.length % 10 === 0) {
+                        generateSpecialFood();
+                    }
+
+                    generateFood();
+
+                    // Изменяем цвет змейки при съедании еды
+                    changeSnakeColor();
+
+                    // Обновляем змейку
+                    drawSnake();
+                }
+            }
+
+            if (head.x === specialFood.x && head.y === specialFood.y) {
+                snake.push({}, {});
+                specialFood = {};
+                drawFood();
+
+                // Изменяем цвет змейки при съедании розовой еды
+                changeSnakeColor();
+
+                // Обновляем змейку
+                drawSnake();
+            }
+        }
+
+        function changeSnakeColor() {
+            document.querySelectorAll('.snake-head').forEach(head => {
+                head.style.backgroundColor = 'green';
+                setTimeout(() => {
+                    head.style.backgroundColor = selectedColor;
+                }, 1000);
+            });
+        }
+
+        function removeFood() {
+            document.querySelectorAll('.food, .special-food').forEach(foodTile => foodTile.remove());
+        }
+
+        function changeDirection(newDirection) {
+            direction = newDirection;
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+
+            if (isPaused) {
+                clearInterval(intervalId);
+                clearInterval(foodTimerId);
+                clearInterval(specialFoodTimerId);
+            } else {
+                intervalId = setInterval(update, snakeSpeed);
+                foodTimerId = setInterval(generateFood, 5000);
+                specialFoodTimerId = setInterval(generateSpecialFood, 10000);
+            }
+        }
+
+        function startGame() {
+            isGameOver = false;
+            selectedColor = document.querySelector('input[name="snake-color"]:checked').value;
+            startMenu.style.display = 'none';
+            snake = [{ x: 10, y: 10 }];
+            direction = 'right';
+            foods = [];
+            specialFood = {};
+            removeFood();
+            generateFood();
+            intervalId = setInterval(update, snakeSpeed);
+            foodTimerId = setInterval(generateFood, 5000);
+            specialFoodTimerId = setInterval(generateSpecialFood, 10000);
+        }
+
+        function endGame() {
+            isGameOver = true;
+            clearInterval(intervalId);
+            clearInterval(foodTimerId);
+            clearInterval(specialFoodTimerId);
+            alert('Game Over!');
+            startMenu.style.display = 'flex';
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>

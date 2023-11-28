@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game - Elite Edition</title>
+    <style>
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(180deg, #1a1a1a, #2c3e50);
+            color: #fff;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.2em;
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+
+        #start-button {
+            background-color: #e74c3c;
+            color: #fff;
+            padding: 15px 30px;
+            font-size: 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            animation: blink 1s infinite alternate;
+        }
+
+        @keyframes blink {
+            0% {
+                background-color: #e74c3c;
+            }
+            100% {
+                background-color: #3498db;
+            }
+        }
+
+        .game-preview {
+            width: 80%;
+            max-width: 600px;
+            margin: 20px 0;
+            background: url('game-preview.jpg') no-repeat center center;
+            background-size: cover;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .rockstar-logo {
+            width: 150px;
+            height: 150px;
+            background: url('game-logo.png') no-repeat center center;
+            background-size: cover;
+            margin-bottom: 20px;
+            border-radius: 50%;
+        }
+
+        .chatgpt-info {
+            margin-top: 40px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="rockstar-logo"></div>
+    <h1>Добро пожаловать в Snake Game - ChatGPT Edition!</h1>
+    <p>Примите вызов и покажите свое умение управлять змейкой в стиле допотопных игр. Готовы ли вы стать легендой?</p>
+    <button id="start-button" onclick="startGame()">Начать игру</button>
+    <div class="game-preview"></div>
+    <div class="chatgpt-info">
+        <p>Игра создана с использованием ChatGPT.</p>
+        <p>© 2023 ChatGPT. Все права защищены.</p>
+    </div>
+
+    <script>
+        function startGame() {
+            window.location.href = 'snake.html'; // Перенаправление на страницу с игрой
+        }
+    </script>
+</body>
+</html>
